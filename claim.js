@@ -1,7 +1,7 @@
-import { redis, cfg, clientIp, makeKey, rateLimit } from '../lib/redis.js';
+import { redis, cfg, clientIp, makeKey, rateLimit, safe } from '../lib/redis.js';
 
 // POST /api/claim { session } -> { key, expires }
-export default async function handler(req, res) {
+async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   if (req.method !== 'POST') return res.status(405).json({ error: 'method' });
 
@@ -33,3 +33,5 @@ export default async function handler(req, res) {
 
   res.json({ key, expires });
 }
+
+export default safe(handler);
