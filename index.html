@@ -60,6 +60,8 @@ const step = (n) => ['s1','s2','s3'].forEach((id, i) => $(id).className = i + 1 
 const ERR = {
   rate_limited: 'Too many requests. Try again later.',
   invalid_session: 'Session expired. Press Start again.',
+  redis_not_configured: 'Server setup incomplete: connect Upstash Redis in Vercel, then redeploy.',
+  server_error: 'Server error. Check the Vercel function logs.',
 };
 
 async function api(path, body) {
@@ -89,13 +91,13 @@ async function claim(session) {
   if (data.error === 'too_fast') return countdown(data.wait, () => claim(session));
   localStorage.removeItem('session');
   step(1); $('go').disabled = false;
-  msg(ERR[data.error] || 'Something went wrong. Press Start again.', 'err');
+  msg(ERR[data.error] || `Something went wrong (HTTP ${status}). Press Start again.`, 'err');
 }
 
 $('go').onclick = async () => {
   $('go').disabled = true; msg('Starting...');
   const { status, data } = await api('/api/start');
-  if (status !== 200) { $('go').disabled = false; return msg(ERR[data.error] || 'Could not start.', 'err'); }
+  if (status !== 200) { $('go').disabled = false; return msg(ERR[data.error] || `Could not start (HTTP ${status}).`, 'err'); }
   localStorage.setItem('session', data.session);
   if (data.checkpointUrl) { msg('Redirecting to checkpoint...'); location.href = data.checkpointUrl; }
   else countdown(data.minSeconds, () => claim(data.session));
