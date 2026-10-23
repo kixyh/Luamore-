@@ -8,6 +8,18 @@ export const redis = new Redis({
   token: process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN,
 });
 
+export const configured = Boolean(
+  (process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL) &&
+  (process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN)
+);
+
+// Wraps a handler so config/Redis problems return a clear JSON error instead of a blank 500.
+export const safe = (fn) => async (req, res) => {
+  if (!configured) return res.status(500).json({ error: 'redis_not_configured' });
+  try { return await fn(req, res); }
+  catch (e) { console.error(e); return res.status(500).json({ error: 'server_error' }); }
+};
+
 export const cfg = {
   minSeconds: Number(process.env.MIN_SECONDS ?? 20),   // minimum time between Start and Claim
   keyHours: Number(process.env.KEY_HOURS ?? 24),       // key lifetime, 0 = never expires
