@@ -1,8 +1,8 @@
 import crypto from 'node:crypto';
-import { redis, cfg, clientIp, rateLimit } from '../lib/redis.js';
+import { redis, cfg, clientIp, rateLimit, safe } from '../lib/redis.js';
 
 // POST /api/start -> { session, minSeconds, checkpointUrl }
-export default async function handler(req, res) {
+async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   if (req.method !== 'POST') return res.status(405).json({ error: 'method' });
 
@@ -13,3 +13,5 @@ export default async function handler(req, res) {
   await redis.set(`sess:${session}`, { ip, t: Date.now() }, { ex: 3600 });
   res.json({ session, minSeconds: cfg.minSeconds, checkpointUrl: cfg.checkpointUrl });
 }
+
+export default safe(handler);
